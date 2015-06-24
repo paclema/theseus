@@ -3,7 +3,7 @@
 Read from arduino by bluetooth diferent sensors and plot it on phone. Then connect to another arduino by bluetooth to send data processend on protocoder app
 
 by Pablo Clemente (aka paclema)
-check it at: https://github.com/paclema/robotic_hand
+check it at: https://github.com/bq/theseus
 
     
 */
@@ -44,7 +44,7 @@ var Offline_interval = 1000;
 //HAND:
 
 var btClient1;
-ui.addCheckbox("Hand Connected", 630, 0, 500, 100, false).onChange(function(val) { 
+ui.addCheckbox("Hand Connected",  1.75*ui.screenWidth/3 , 0, 500, 100, false).onChange(function(val) { 
     console.log("Connect Hand" + val);
 
     if(val){
@@ -73,7 +73,7 @@ ui.addCheckbox("Hand Connected", 630, 0, 500, 100, false).onChange(function(val)
 
 var btClient2;
 var btClient2_data;
-ui.addCheckbox("Flexiglobe connected", 630, 70, 500, 100, false).onChange(function(val) { 
+ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, false).onChange(function(val) { 
     console.log("Connect FlexiGlove" + val);
     
     if(val){
@@ -111,32 +111,33 @@ ui.addCheckbox("Flexiglobe connected", 630, 70, 500, 100, false).onChange(functi
         }
         
         Update_raw_sensors_data();
+        Sensors_detected = true;
         
     });
 });
 
 
 //*****************************************************************************************   Buttons:
-
-var input = ui.addInput("command", 0, 10, 360, 150);
-var send = ui.addButton("Send", 370, 10).onClick(function() {
+var margin_layout = 10
+var input = ui.addInput("command", 0, margin_layout, ui.screenWidth/3, ui.screenHeight/10);
+var send = ui.addButton("Send", ui.screenWidth/3, margin_layout).onClick(function() {
     btClient1.send(input.getText() + "\n");
 });
 
 
-var send_OPEN = ui.addButton("WRIST:60;", 0, 300).onClick(function() {
+var send_OPEN = ui.addButton("WRIST:60;", 0, ui.screenHeight*0.12).onClick(function() {
     //btClient1.send("ALL 50" + "\n");
     //btClient1.send("140,40,140,40,40" + "\n");
     btClient1.send("WRIST:60;" + "\n");
     
 });
-var send_CLOSED = ui.addButton("WRIST:120;", 310, 300).onClick(function() {
+var send_CLOSED = ui.addButton("WRIST:120;", ui.screenWidth/3, ui.screenHeight*0.12).onClick(function() {
     //btClient1.send("ALL -50" + "\n");
     //btClient1.send("40,140,40,140,140" + "\n");
     btClient1.send("WRIST:120;" + "\n");  
   
 });
-var send_thumbUp = ui.addButton("Trolleo", 610, 300).onClick(function() {
+var send_thumbUp = ui.addButton("Trolleo", 2*ui.screenWidth/3 + margin_layout/2, ui.screenHeight*0.12).onClick(function() {
     if(btClient1){
         btClient1.send("WRIST:60;" + "\n");
         util.delay(500, function() {
@@ -157,8 +158,8 @@ var send_thumbUp = ui.addButton("Trolleo", 610, 300).onClick(function() {
 
 
 //*****************************************************************************************   Plot Processing:
-var processing_heigth = 800;
-var processing = ui.addProcessing(10, 600, ui.screenWidth-20, processing_heigth, "P3D");
+var processing_heigth = ui.screenWidth*0.74;
+var processing = ui.addProcessing(margin_layout,  ui.screenHeight*0.20, ui.screenWidth-20, processing_heigth, "P3D");
 
 var plot_min = 0;
 var plot_max = processing_heigth-100;
@@ -178,13 +179,13 @@ processing.draw(function(p) {
     if(Sensors_detected){
         for(var j=0;j<5;j++){
             p.fill(2*sensor_plot_draw[j],0,255-2*sensor_plot_draw[j]);
-            p.rect(0+j*220,   p.height, 200, -sensor_plot_draw[j]);
+            p.rect(0+j*ui.screenWidth/5,   p.height,  ui.screenWidth/5 -10 , -sensor_plot_draw[j]);
         }
     }
     else if(display_sensors_offline && !Sensors_detected){
         
     p.fill(255,120,42);
-    p.textSize(130);    
+    p.textSize(ui.screenWidth/9);    
     p.text("Sensors offline!",80,400);
     
     }
@@ -193,11 +194,11 @@ processing.draw(function(p) {
 
 //*****************************************************************************************   Texts:
 
-var txt = ui.addText(10, 1400, ui.screenWidth, 50);
-var txt2 = ui.addText(10, 1450, ui.screenWidth, 50);
-var txt3 = ui.addText(10, 1500, ui.screenWidth, 50);
-var txt4 = ui.addText(10, 1550, ui.screenWidth, 50);
-var txt5 = ui.addText(10, 1600, ui.screenWidth, 50);
+var txt = ui.addText(margin_layout, ui.screenHeight*0.65, ui.screenWidth, ui.screenHeight*0.04);
+var txt2 = ui.addText(margin_layout, ui.screenHeight*0.67, ui.screenWidth, ui.screenHeight*0.04);
+var txt3 = ui.addText(margin_layout, ui.screenHeight*0.69, ui.screenWidth, ui.screenHeight*0.04);
+var txt4 = ui.addText(margin_layout, ui.screenHeight*0.71, ui.screenWidth, ui.screenHeight*0.04);
+var txt5 = ui.addText(margin_layout, ui.screenHeight*0.73, ui.screenWidth, ui.screenHeight*0.04);
 
 //*****************************************************************************************   Functions:
 
@@ -251,10 +252,10 @@ function Update_raw_sensors_data(){
     if(btClient1) btClient1.send(data_string + "\n");
 
     // DEBUG text:
-    txt2.text("Actuators: " + "\t" + sensor_raw + "\n");
+    txt2.text("Actuators:     " + "\t" + sensor_raw + "\n");
     txt3.text("actuator_data: " + "\t" + actuator_data[0] + actuator_data[1] + actuator_data[2] + actuator_data[3] + actuator_data[4] + actuator_data[5] + actuator_data[6] + actuator_data[7] + actuator_data[8] + actuator_data[9] + ";\n" );   
-    //txt4.text("sensor_plot: "+ "\t" + sensor_plot + "\n"); 
-    txt4.text("data_string: "+ "\t" + data_string + "\n");
+    //txt4.text("sensor_plot: " + "\t" + sensor_plot + "\n"); 
+    txt4.text("data_string:   " + "\t" + data_string + "\n");
   
     
 }
@@ -302,4 +303,20 @@ else if(Sensors_detected){
     display_sensors_offline = false;
 }
 
+//*****************************************************************************************   Calibrate:
 
+//  ******** ------------ TODO --------------------
+
+var send_CLOSED = ui.addButton("Calibrar", ui.screenWidth - 410, ui.screenHeight - 200).onClick(function() {
+    if(Sensors_detected){
+        ui.popupInfo("Calibrate", "Press yes if you want to recalibrate Max/min ends of your FlexiGlobe", "yes", "no", function(e) {
+            console.log("you pressed " + e);
+        });
+    }
+    else if(!Sensors_detected){
+    var0.livecodingfeedback.write("hola");
+    var0.livecodingfeedback.show(true);
+    }
+    
+  
+});
