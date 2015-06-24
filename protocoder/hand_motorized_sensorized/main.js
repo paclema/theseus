@@ -25,8 +25,8 @@ var data_string = "";
 
 // Max/min ends:
 
-var sensor_raw_min = [ 500, 500, 500, 500, 500];
-var sensor_raw_max = [ 900, 900, 900, 900, 900];
+var sensor_raw_min = [ 600, 600, 600, 600, 600];
+var sensor_raw_max = [ 800, 800, 800, 800, 800];
 
 var actuator_min = [ 160, 40, 140, 20, 40];
 var actuator_max = [ 0, 140, 20, 140, 180];
@@ -110,7 +110,9 @@ ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, fal
             for(var i=0;i<data_part2.length;i++) sensor_raw[i] = data_part2[i];
         }
         
-        Update_raw_sensors_data();
+        if(!calibrate_sensors)          update_raw_sensors_data();
+        else if(calibrate_sensors)      update_sensors_ends();
+        
         Sensors_detected = true;
         
     });
@@ -118,7 +120,7 @@ ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, fal
 
 
 //*****************************************************************************************   Buttons:
-var margin_layout = 10
+var margin_layout = 10 ;
 var input = ui.addInput("command", 0, margin_layout, ui.screenWidth/3, ui.screenHeight/10);
 var send = ui.addButton("Send", ui.screenWidth/3, margin_layout).onClick(function() {
     btClient1.send(input.getText() + "\n");
@@ -202,7 +204,7 @@ var txt5 = ui.addText(margin_layout, ui.screenHeight*0.73, ui.screenWidth, ui.sc
 
 //*****************************************************************************************   Functions:
 
-function Update_raw_sensors_data(){
+function update_raw_sensors_data(){
     
     var cnt = 0;
     
@@ -229,6 +231,7 @@ function Update_raw_sensors_data(){
         sensor_plot[cnt] = sensor_plot[cnt].toFixed(0);
         
     }
+    
     
     // Copy sensor_plot data to sensor_plot_draw data because of misbehaviour on processing plot:
     for(cnt=0; cnt<sensor_raw.length; cnt++)  sensor_plot_draw[cnt] = sensor_plot[cnt];
@@ -260,11 +263,7 @@ function Update_raw_sensors_data(){
     
 }
 
-function update_sensors_ends(){
-    
-    
-    //  ******** ------------ TODO --------------------
-}
+
 
 function  map( sensor_val,  in_min,  in_max,  out_min,  out_max){
     // in_min start of range
@@ -283,10 +282,11 @@ function  map( sensor_val,  in_min,  in_max,  out_min,  out_max){
     //  ******** ------------ TODO --------------------
     
 //Add a seekbar
+/*
 var slider = ui.addSlider(ui.screenWidth - 510, ui.screenHeight - 300, 500, 100, 40, 140).onChange(function(val) {
     if(btClient1) btClient1.send("FINGER:2," + val + ";" + "\n");
 });
-
+*/
 //*****************************************************************************************   Timers:
 
 var loop1;
@@ -306,17 +306,62 @@ else if(Sensors_detected){
 //*****************************************************************************************   Calibrate:
 
 //  ******** ------------ TODO --------------------
+var calibrate_sensors = false;
 
-var send_CLOSED = ui.addButton("Calibrar", ui.screenWidth - 410, ui.screenHeight - 200).onClick(function() {
+ui.addButton("Calibrar", ui.screenWidth - 410, ui.screenHeight - 200).onClick(function() {
     if(Sensors_detected){
-        ui.popupInfo("Calibrate", "Press yes if you want to recalibrate Max/min ends of your FlexiGlobe", "yes", "no", function(e) {
-            console.log("you pressed " + e);
+        ui.popupInfo("Calibrate", "Press yes if you want to recalibrate Max/min ends of your FlexiGlobe", "yes", "no", function(reply) {
+            calibrate_sensors = reply;
+            console.log("you pressed " + reply);
         });
     }
     else if(!Sensors_detected){
-    var0.livecodingfeedback.write("hola");
-    var0.livecodingfeedback.show(true);
+        /*
+        // livecodingfeedback:
+        var l = app.liveCodingFeedback()
+            .autoHide(true)
+            .textSize(25)
+            .write("Sensors_not_detected!!" + "\n" + "Please connect sensors before calibrating them")
+            .backgroundColor("#55000055")
+            .show(true);
+    */
+    
+    ui.toast("Sensors_not_detected!!" + "\n" + "Please connect sensors before calibrating them");
     }
     
   
 });
+
+function update_sensors_ends(){
+    
+    
+    //  ******** ------------ TODO --------------------
+    
+    var cnt = 0;
+    
+    // ParseInt raw data and copy to copy data to Max/min ends array where appropriate:
+    for(cnt=0; cnt<sensor_raw.length; cnt++){
+        sensor_raw[cnt] = parseInt(sensor_raw[cnt]);
+        //sensor_plot[cnt] = sensor_raw[cnt];
+        if(sensor_raw[cnt] >= sensor_raw_max[cnt]) sensor_raw_max[cnt] = sensor_raw[cnt];
+        if(sensor_raw[cnt] <= sensor_raw_min[cnt]) sensor_raw_min[cnt] = sensor_raw[cnt];
+    }
+    
+    // Convert actuator_data array of integers to and string max_string to send to bluetooth:
+    var max_string = "";
+    for(cnt=0; cnt<sensor_raw_max.length; cnt++){
+        max_string += sensor_raw_max[cnt];
+        max_string += ";";
+    }  
+    
+    txt2.text("max_string:   " + "\t" + max_string + "\n");
+    
+    // Convert actuator_data array of integers to and string max_string to send to bluetooth:
+    var min_string = "";
+    for(cnt=0; cnt<sensor_raw_min.length; cnt++){
+        min_string += sensor_raw_min[cnt];
+        min_string += ";";
+    }  
+    
+    txt3.text("min_string:   " + "\t" + min_string + "\n");    
+}
