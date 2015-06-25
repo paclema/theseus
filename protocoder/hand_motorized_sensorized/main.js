@@ -46,12 +46,12 @@ var Offline_interval = 1000;
 //HAND:
 
 var btClient1;
-ui.addCheckbox("Hand Connected",  1.75*ui.screenWidth/3 , 0, 500, 100, false).onChange(function(val) { 
-    console.log("Connect Hand" + val);
+ui.addCheckbox("Hand connected",  1.75*ui.screenWidth/3 , 0, 500, 100, false).onChange(function(val) { 
+    console.log("Hand connecting... ");
 
     if(val){
         btClient1=network.bluetooth.connectSerial('98:D3:31:B2:DC:26', function(status) {
-            console.log("connected btClient1 " + status);
+            console.log("btClient1 connected  " + status);
     
             if (status) media.playSound("Hand_connected.wav");               //media.textToSpeech("Mano conectada");
             
@@ -76,11 +76,11 @@ ui.addCheckbox("Hand Connected",  1.75*ui.screenWidth/3 , 0, 500, 100, false).on
 var btClient2;
 var btClient2_data;
 ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, false).onChange(function(val) { 
-    console.log("Connect FlexiGlove" + val);
+    console.log("FlexiGlove connecting... ");
     
     if(val){
         btClient2=network.bluetooth.connectSerial('98:D3:31:30:1A:8C', function(status) {
-            console.log("connected btClient2 " + status);
+            console.log("btClient2 connected  " + status);
             
             if (status) media.playSound("Sensors_connected.wav");               //media.textToSpeech("Sensores conectados");
             Sensors_detected = true;
