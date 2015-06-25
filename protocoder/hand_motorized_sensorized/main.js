@@ -21,6 +21,7 @@ var sensor_raw = [];
 var sensor_plot = [];
 var sensor_plot_draw = [];
 var actuator_data = [];
+
 var data_string = "";
 
 // Max/min ends:
@@ -36,6 +37,7 @@ var actuator_dir = [ 0, 1, 0, 1, 1];
 
 var Sensors_detected = false;
 var display_sensors_offline = true;
+var calibrate_sensors = false;
 
 var Offline_interval = 1000;
 //*****************************************************************************************   Bluetooth conections:
@@ -173,23 +175,48 @@ processing.setup(function(p) {
 
 processing.draw(function(p) { 
     
+    var cnt = 0;
+    
     p.fill(0, 20);
     p.rect(0, 0, p.width, p.height);
     p.noStroke();
     p.fill(255);
+    
 
     if(Sensors_detected){
-        for(var j=0;j<5;j++){
-            p.fill(2*sensor_plot_draw[j],0,255-2*sensor_plot_draw[j]);
-            p.rect(0+j*ui.screenWidth/5,   p.height,  ui.screenWidth/5 -10 , -sensor_plot_draw[j]);
+        for(cnt=0;cnt<5;cnt++){
+            p.fill(2*sensor_plot_draw[cnt],0,255-2*sensor_plot_draw[cnt]);
+            p.rect(0+cnt*ui.screenWidth/5,   p.height,  ui.screenWidth/5 -10 , -sensor_plot_draw[cnt]);
         }
     }
     else if(display_sensors_offline && !Sensors_detected){
         
-    p.fill(255,120,42);
-    p.textSize(ui.screenWidth/9);    
-    p.text("Sensors offline!",80,400);
+        p.fill(255,120,42);
+        p.textSize(ui.screenWidth/9);    
+        p.text("Sensors offline!",80,400);
     
+    }
+    if(calibrate_sensors){
+        for(cnt=0;cnt<5;cnt++){
+            p.fill(2*sensor_plot_draw[cnt],0,255-2*sensor_plot_draw[cnt]);
+            p.rect(0+cnt*ui.screenWidth/5,   p.height,  ui.screenWidth/5 -10 , processing_heigth/2 -sensor_plot_draw[cnt]);
+        }
+            
+        p.fill(255,120,42);
+        p.textSize(ui.screenWidth/9);    
+        p.text("Calibrating sensors...",80,400);
+    }
+    
+    // Plot Max/min ends on drawing:
+
+    for(cnt=0;cnt<5;cnt++){
+        
+        p.fill(150);
+        p.textSize(ui.screenWidth/16);     
+        p.text(sensor_raw_max[cnt].toFixed(0),20+cnt*ui.screenWidth/5, 50);
+        p.text(sensor_raw_min[cnt].toFixed(0),20+cnt*ui.screenWidth/5, processing_heigth-20);
+        //p.rect(0+cnt*ui.screenWidth/5,   p.height,  ui.screenWidth/5 -10 , -sensor_plot_draw[cnt]);
+        
     }
 
 });
@@ -289,6 +316,7 @@ var slider = ui.addSlider(ui.screenWidth - 510, ui.screenHeight - 300, 500, 100,
 */
 //*****************************************************************************************   Timers:
 
+// Loop for display "Sensors offline!!" on processing plot:
 var loop1;
 
 if(!Sensors_detected){
@@ -306,18 +334,36 @@ else if(Sensors_detected){
 //*****************************************************************************************   Calibrate:
 
 //  ******** ------------ TODO --------------------
-var calibrate_sensors = false;
 
 ui.addButton("Calibrar", ui.screenWidth - 410, ui.screenHeight - 200).onClick(function() {
     if(Sensors_detected){
         ui.popupInfo("Calibrate", "Press yes if you want to recalibrate Max/min ends of your FlexiGlobe", "yes", "no", function(reply) {
             calibrate_sensors = reply;
             console.log("you pressed " + reply);
+            
+            if(calibrate_sensors){
+                
+                // Restart max/min ends:
+                
+                sensor_raw_min = [ 700, 700, 700, 700, 700];
+                sensor_raw_max = [ 700, 700, 700, 700, 700];
+            }
+            
+            else{
+                
+                var data = new Array();
+                
+                for(cnt=0; cnt<sensor_raw_max.length; cnt++)    data.push(sensor_raw_max[cnt]);
+                
+                //saving data in saved_data.txt 
+                fileio.saveStrings("saved_data.txt", data);
+            }
         });
     }
     else if(!Sensors_detected){
         /*
         // livecodingfeedback:
+        
         var l = app.liveCodingFeedback()
             .autoHide(true)
             .textSize(25)
@@ -342,7 +388,7 @@ function update_sensors_ends(){
     // ParseInt raw data and copy to copy data to Max/min ends array where appropriate:
     for(cnt=0; cnt<sensor_raw.length; cnt++){
         sensor_raw[cnt] = parseInt(sensor_raw[cnt]);
-        //sensor_plot[cnt] = sensor_raw[cnt];
+        sensor_plot_draw[cnt] = sensor_raw[cnt];
         if(sensor_raw[cnt] >= sensor_raw_max[cnt]) sensor_raw_max[cnt] = sensor_raw[cnt];
         if(sensor_raw[cnt] <= sensor_raw_min[cnt]) sensor_raw_min[cnt] = sensor_raw[cnt];
     }
