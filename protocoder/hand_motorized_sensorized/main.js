@@ -112,7 +112,10 @@ ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, fal
             for(var i=0;i<data_part2.length;i++) sensor_raw[i] = data_part2[i];
         }
         
-        if(!calibrate_sensors)          update_raw_sensors_data();
+        if(!calibrate_sensors){
+            update_raw_sensors_data();
+            read_hand_signs();
+        }
         else if(calibrate_sensors)      update_sensors_ends();
         
         Sensors_detected = true;
@@ -234,26 +237,32 @@ var txt5 = ui.addText(margin_layout, ui.screenHeight*0.73, ui.screenWidth, ui.sc
 function update_raw_sensors_data(){
     
     var cnt = 0;
+    var sensor_raw_updated = [];
+    
+    // Save raw data to and intermediate array:
+    for(cnt=0; cnt<sensor_raw.length; cnt++){
+        sensor_raw_updated[cnt] = sensor_raw[cnt];
+    } 
     
     // ParseInt raw data and copy to draw variables for processing plot:
-    for(cnt=0; cnt<sensor_raw.length; cnt++){
-        sensor_raw[cnt] = parseInt(sensor_raw[cnt]);
-        sensor_plot[cnt] = sensor_raw[cnt];
+    for(cnt=0; cnt<sensor_raw_updated.length; cnt++){
+        sensor_raw_updated[cnt] = parseInt(sensor_raw_updated[cnt]);
+        sensor_plot[cnt] = sensor_raw_updated[cnt];
     } 
     
 
     // Map raw data to min/max actuator ends and fix to integer data:
-    for(cnt=0; cnt<sensor_raw.length; cnt++){
-        if(actuator_dir[cnt])         sensor_raw[cnt] = map( sensor_raw[cnt], sensor_raw_min[cnt], sensor_raw_max[cnt], actuator_min[cnt], actuator_max[cnt]);      //Normal actuator direcction
-        else if(!actuator_dir[cnt])   sensor_raw[cnt] = map( sensor_raw[cnt], sensor_raw_max[cnt], sensor_raw_min[cnt], actuator_max[cnt], actuator_min[cnt]);      //Reversed actuator direction
+    for(cnt=0; cnt<sensor_raw_updated.length; cnt++){
+        if(actuator_dir[cnt])         sensor_raw_updated[cnt] = map( sensor_raw_updated[cnt], sensor_raw_min[cnt], sensor_raw_max[cnt], actuator_min[cnt], actuator_max[cnt]);      //Normal actuator direcction
+        else if(!actuator_dir[cnt])   sensor_raw_updated[cnt] = map( sensor_raw_updated[cnt], sensor_raw_max[cnt], sensor_raw_min[cnt], actuator_max[cnt], actuator_min[cnt]);      //Reversed actuator direction
         
-        sensor_raw[cnt] = sensor_raw[cnt].toFixed(0);
+        sensor_raw_updated[cnt] = sensor_raw_updated[cnt].toFixed(0);
         
     } 
     
     
     // Map plot data to min/max plot ends and fix to integer data:
-    for(cnt=0; cnt<sensor_raw.length; cnt++){
+    for(cnt=0; cnt<sensor_raw_updated.length; cnt++){
         sensor_plot[cnt] = map( sensor_plot[cnt], sensor_raw_min[cnt], sensor_raw_max[cnt], plot_min, plot_max);
         sensor_plot[cnt] = sensor_plot[cnt].toFixed(0);
         
@@ -261,15 +270,15 @@ function update_raw_sensors_data(){
     
     
     // Copy sensor_plot data to sensor_plot_draw data because of misbehaviour on processing plot:
-    for(cnt=0; cnt<sensor_raw.length; cnt++)  sensor_plot_draw[cnt] = sensor_plot[cnt];
+    for(cnt=0; cnt<sensor_raw_updated.length; cnt++)  sensor_plot_draw[cnt] = sensor_plot[cnt];
 
     
 
     // Copy processed data to actuator data array actuator_data with SPP:
     actuator_data.length = 0;               //To empty actuator_data
     actuator_data.push("HAND:");
-    for(cnt=0; cnt<sensor_raw.length; cnt++){
-        actuator_data.push(sensor_raw[cnt]);
+    for(cnt=0; cnt<sensor_raw_updated.length; cnt++){
+        actuator_data.push(sensor_raw_updated[cnt]);
         if(cnt != 4) actuator_data.push(",");
     }
     actuator_data.push(";");
@@ -282,7 +291,7 @@ function update_raw_sensors_data(){
     if(btClient1) btClient1.send(data_string + "\n");
 
     // DEBUG text:
-    txt2.text("Actuators:     " + "\t" + sensor_raw + "\n");
+    txt2.text("Actuators:     " + "\t" + sensor_raw_updated + "\n");
     txt3.text("actuator_data: " + "\t" + actuator_data[0] + actuator_data[1] + actuator_data[2] + actuator_data[3] + actuator_data[4] + actuator_data[5] + actuator_data[6] + actuator_data[7] + actuator_data[8] + actuator_data[9] + ";\n" );   
     //txt4.text("sensor_plot: " + "\t" + sensor_plot + "\n"); 
     txt4.text("data_string:   " + "\t" + data_string + "\n");
@@ -290,7 +299,50 @@ function update_raw_sensors_data(){
     
 }
 
+function  read_hand_signs(){
+    
+    var state_margin = 50;
+    var fingers_down = read_all_sensor_down(0);
+    
+    if ((sensor_raw[0] <= sensor_raw_min[0]+state_margin) && (read_all_sensor_down(0) == sensor_raw.length-1)){
+        //-- Thumbs up:
+        media.textToSpeech("zams ap!");
+        console.log("--------------------------thums up");
+        
+    }
+    else{
+        //console.log(fingers_down);
+    }
 
+    if ((sensor_raw[2] <= sensor_raw_min[2]+state_margin) && (read_all_sensor_down(2) == sensor_raw.length-1)){
+        //-- Thumbs up:
+        media.textToSpeech("fak yu");
+        console.log("--------------------------thums up");
+        
+    }
+    else{
+        //console.log(fingers_down);
+    }
+
+}
+
+function  read_all_sensor_down(except_finger){
+    var down_fingers = 0;
+    var state_margin = 50;
+    //console.log("---------------------------------------------------------------");
+    for(var cnt=0; cnt<sensor_raw.length; cnt++){
+        if(cnt!=except_finger){
+            if(sensor_raw[cnt] >= sensor_raw_max[cnt]-state_margin){
+                //console.log("finger down detected: " + cnt);
+                down_fingers++;
+            }
+            
+            
+        }
+        //console.log("finger detected: " + cnt+ " sensor_raw_max[cnt]: " + sensor_raw[cnt]);
+    }
+    return down_fingers;
+}
 
 function  map( sensor_val,  in_min,  in_max,  out_min,  out_max){
     // in_min start of range
