@@ -114,7 +114,6 @@ ui.addCheckbox("Flexiglobe connected", 1.75*ui.screenWidth/3 , 70, 500, 100, fal
         
         if(!calibrate_sensors){
             update_raw_sensors_data();
-            read_hand_signs();
         }
         else if(calibrate_sensors)      update_sensors_ends();
         
@@ -306,8 +305,14 @@ function  read_hand_signs(){
     
     if ((sensor_raw[0] <= sensor_raw_min[0]+state_margin) && (read_all_sensor_down(0) == sensor_raw.length-1)){
         //-- Thumbs up:
-        media.textToSpeech("zams ap!");
+        //media.textToSpeech("zams ap!");
+        l2.stop();
+        media.playSound("dadle_thumbs_up.mp3");  
         console.log("--------------------------thums up");
+        util.delay(1000, function() {
+        });
+        
+        l2.start();
         
     }
     else{
@@ -316,8 +321,15 @@ function  read_hand_signs(){
 
     if ((sensor_raw[2] <= sensor_raw_min[2]+state_margin) && (read_all_sensor_down(2) == sensor_raw.length-1)){
         //-- Thumbs up:
-        media.textToSpeech("fak yu");
-        console.log("--------------------------thums up");
+        //media.textToSpeech("fak yu");
+        l2.stop();
+        media.playSound("fuck_you.mp3");  
+        console.log("--------------------------fuck you");
+        
+        util.delay(1000, function() {
+        });
+        
+        l2.start();
         
     }
     else{
@@ -382,6 +394,11 @@ else if(Sensors_detected){
     loop1.stop();
     display_sensors_offline = false;
 }
+
+var l2 = util.loop(1000, function () { 
+    //txt.append("repeating every 1000 ms \n");
+    read_hand_signs();
+}).start(); 
 
 //*****************************************************************************************   Calibrate:
 
